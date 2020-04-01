@@ -1,0 +1,9 @@
+
+hosts=$(awk '/^node/{++i}END{print i}'  node_ip.txt)
+for i in `seq $hosts`;do
+    host_name=node$i
+    host_IP=$(awk -F " |\t" '/^'$host_name'/{print $2}' node_ip.txt) &> /dev/null
+    node_hosts=$node_hosts"\"$host_IP\"",
+done
+export node_hosts=${node_hosts%%,}
+echo $node_hosts

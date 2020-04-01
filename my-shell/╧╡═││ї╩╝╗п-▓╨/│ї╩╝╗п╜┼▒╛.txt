@@ -1,0 +1,111 @@
+#!/usr/bin/bash
+# Author: Chen Chong
+# Mail: wick8647@11.com
+clear
+echo -e "\033[31m----------system initialization begining-------------\033[0m"
+# disable selinux and firewalld
+sed -ri '/^SELINUX=/c SELINUX=disabled' /etc/selinux/config
+setenforce 0
+systemctl stop firewalld
+systemctl disable firewalld
+echo -e "\033[31m-------------------stop selinux and firewalld is ok--------------------\033[0m"; sleep 1
+# update aliyun source
+yum -y install wget
+gzip /etc/yum.repos.d/*
+wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+wget -O /etc/yum.repos.d/CentOS-epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
+yum clean all
+yum makecache
+echo -e "\033[31m-------------------update source is ok--------------------\033[0m"; sleep 1
+# install base rpm package
+yum -y install vim-enhanced lftp git tree bash-completion*
+yum -y install bind-utils net-tools
+yum -y install ntpdate sysstat man mtr lsof iotop iostat subversion nscd
+# set ntp
+/usr/sbin/ntpdate ntp1.aliyun.com && hwclock -w
+echo "*/20 * * * * root /usr/sbin/ntpdate ntp1.aliyun.com &> /dev/null" >> /etc/crontab
+echo -e "\033[31m-------------------set ntp is ok--------------------\033[0m"; sleep 1
+# set ulimit
+cat >>/etc/security/limits.conf <<-EOF
+* soft nproc 655350
+* hard nproc 655350
+* soft nofile 655350
+* hard nofile 655350
+EOF
+ulimit -SHn 655350
+echo -e "\033[31m-------------------set ulimit is ok--------------------\033[0m"; sleep 1
+# set locale
+sed -ri '/^LANG=.*/c LANG="en_US.UTF-8"' /etc/locale.conf
+echo -e "\033[31m-------------------set locale is ok--------------------\033[0m"; sleep 1
+# set sysctl
+> /etc/sysctl.conf
+cat >>/etc/sysctl.conf <<-EOF
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+net.ipv4.icmp_ignore_bogus_error_responses = 1
+net.ipv4.ip_forward = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+kernel.sysrq = 0
+kernel.core_uses_pid = 1
+net.ipv4.tcp_syncookies = 1
+kernel.msgmnb = 65536
+kernel.msgmax = 65536
+kernel.shmmax = 68719476736
+kernel.shmall = 4294967296
+net.ipv4.tcp_max_tw_buckets = 6000
+net.ipv4.tcp_sack = 1
+net.ipv4.tcp_window_scaling = 1
+net.ipv4.tcp_rmem = 4096 87380 4194304
+net.ipv4.tcp_wmem = 4096 16384 4194304
+net.core.wmem_default = 8388608
+net.core.rmem_default = 8388608
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.core.netdev_max_backlog = 262144
+net.ipv4.tcp_max_orphans = 3276800
+net.ipv4.tcp_max_syn_backlog = 262144
+net.ipv4.tcp_timestamps = 0
+net.ipv4.tcp_synack_retries = 2
+net.ipv4.tcp_syn_retries = 2
+net.ipv4.tcp_tw_recycle = 1
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_mem = 94500000 915000000 927000000
+net.ipv4.tcp_fin_timeout = 1
+net.ipv4.tcp_keepalive_time = 600
+net.ipv4.ip_local_port_range = 10000 65535
+fs.file-max=655350
+EOF
+sysctl -p
+echo -e "\033[31m-------------------set sysctl is ok--------------------\033[0m"; sleep 1
+# system tools
+yum -y install gcc gcc-c++ make cmake autoconf bzip2 bzip2-devel openssl openssl-devel openssl-perl
+yum -y install curl rsync gd zip perl unzip lrzsz traceroute screen ntsysv
+# init ssh
+sed -ri '/PermitRootLogin/c PermitRootLogin yes' /etc/ssh/sshd_config
+sed -ri 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+sed -ri '/Pub/{s/#//}' /etc/ssh/sshd_config
+sed -ri 's/GSSAPIAuthentication yes/GSSAPIAuthentication no/g' /etc/ssh/sshd_config
+sed -ri '/UseDNS/c UseDNS no' /etc/ssh/sshd_config
+systemctl restart sshd
+echo -e "\033[31m-------------------set ssh is ok--------------------\033[0m"; sleep 1
+# set open boot menu time
+sed -ri 's/5/2/' /etc/sysconfig/grub
+# sed -ri 's/quiet/quiet net.ifnames=0 biosdevname=0/g' /etc/sysconfig/grub
+/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+# set network
+cat >/etc/sysconfig/network-scripts/ifcfg-eth0 <<-EOF
+TYPE="Ethernet"
+BOOTPROTO="dhcp"
+NAME=" eth0 "
+DEVICE=" eth0 "
+ONBOOT="yes"
+EOF
+systemctl restart network
+echo -e "\033[31m-------------------set network is ok--------------------\033[0m"; sleep 1
+echo -e "\033[31m----------system initialization is ok-------------\033[0m"

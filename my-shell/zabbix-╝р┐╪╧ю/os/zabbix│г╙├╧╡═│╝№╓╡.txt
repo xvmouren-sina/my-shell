@@ -1,0 +1,29 @@
+测试参数调试
+./zabbix_get -s 127.0.0.1 -p 10050 -k "vm.memory.size[total]"
+zabbix_get -s 被监控的服务器 -p 监控端口 -k 采集的key
+
+磁盘监控
+磁盘容量
+vfs.fs.size[/,free] 磁盘剩余容量
+vfs.fs.size[/,used] 磁盘已使用容量
+vfs.fs.size[/] 磁盘总容量
+
+内存监控
+内存
+vm.memory.size[available] 系统中已用内存量
+vm.memory.size[total] 系统总共内存量
+swap空间
+system.swap.size[,free] swap剩余容量
+system.swap.size[,pfree] swap剩余百分比
+system.swap.size[,total] swap交换区总共容量
+
+CPU监控
+CPU负载
+system.cpu.util[,,avg1] 系统CPU平均1min的利用百分比
+system.cpu.util[,,avg5] 系统CPU平均5min的利用百分比
+system.cpu.util[,,avg15] 系统CPU平均15min的利用百分比
+system.cpu.load[percpu,avg1] 系统CPU总负载/在线cpu个数平均1min的利用百分比
+system.cpu.load[percpu,avg5] 系统CPU总负载/在线cpu个数平均5min的利用百分比
+system.cpu.load[percpu,avg15] 系统CPU总负载/在线cpu个数平均15min的利用百分比
+perf_counter["Processor(_Total)% User Time"] 系统CPU使用时间百分比情况
+perf_counter["Processor(_Total)% Processor Time"] 系统CPU使用负载百分比情况

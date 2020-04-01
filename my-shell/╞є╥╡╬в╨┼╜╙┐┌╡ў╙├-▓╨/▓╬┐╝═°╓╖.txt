@@ -1,0 +1,4 @@
+https://www.cnblogs.com/linyouyi/p/9845843.html      //sshrc.sh
+https://blog.csdn.net/hixiaomai/article/details/81606232   //pro.sh
+https://blog.csdn.net/h2604396739/article/details/83856711   //curl 用法
+https://blog.csdn.net/Chenliaoyuanjv/article/details/79689028     //数据请求用法

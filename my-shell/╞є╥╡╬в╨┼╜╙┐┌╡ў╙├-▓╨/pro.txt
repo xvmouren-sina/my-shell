@@ -1,0 +1,186 @@
+#!/bin/bash
+
+#!/bin/bash
+
+# Create for mai
+ # Copyright http://www.mairoot.com
+ # Create date 2018-07-21
+ # Using check host source
+ # Noting delete content
+ # Shell Option $@
+
+# 01.获取主机资源
+function sys_info()
+{
+ # 系统信息
+ Date=`date +%Y-%m-%d`
+ Date_time=`date "+%Y-%m-%d__%H:%M:%S"`
+ Host_name=`hostname`
+ IP_net_dev="ens33"
+ IP_addr=`ifconfig $IP_net_dev|grep "inet addr"|awk -F":" '{print $2}'|awk -F" " '{print $1}'`
+ # 主机资源
+ Disk_rate_sys=`df -h|grep \/\$|awk -F" " '{ print $5 }'`
+ Disk_rate_sys2=${Disk_rate_sys%%%}
+ Disk_rate_data=`df -h|grep \/boot\$|awk -F" " '{ print $5 }'`
+ Disk_rate_data2=${Disk_rate_data%%%}
+ CPU_free=`vmstat |tail -1|awk -F" " '{print $15}'`
+ Load_ave15=`uptime |awk '{ print $NF }'|awk -F" " '{ print $1 }'`
+ Load_ave15_1=`expr $Load_ave15`
+ Mem_Total_kb=`cat /proc/meminfo | grep "MemTotal"|awk -F":" '{print $2}'|awk '{print $1}'`
+ Mem_Free_kb=`cat /proc/meminfo | grep "MemFree"|awk -F":" '{print $2}'|awk '{print $1}'`
+ Mem_Total=`expr $Mem_Total_kb / 1024`
+ Mem_Free=`expr $Mem_Free_kb / 1024`
+ # 微信接口
+ CropID='ww3379419e0273be32'
+ Secret='MA4JbQ7L48Fgvry4_VLetcVBe8e7LvyzfNRPxXZfGWM'
+ GURL="https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=$CropID&corpsecret=$Secret"
+ Gtoken=$(/usr/bin/curl -s -G $GURL | awk -F\" '{print $10}')
+ PURL="https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=$Gtoken"
+ To_User="XuJiaHao"
+ To_Party="1"
+ Agent_ID="1000002"
+ # 日志目录
+ if [ ! -d "/tmp/logs_check" ]; then mkdir /tmp/logs_check; fi
+ Logs_file='/tmp/logs_check'
+ # 远程地址
+ Real_IP=`curl ifconfig.me &`
+ IP_addr=`awk '{print $3}' <<< $SSH_CONNECTION`
+ SSH_addr="$Real_IP"
+ # 运行业务
+ Project_mode="`hostname`"
+}
+
+# 02.主机资源磁盘、CPU、MEM、LOAD
+# 2.1 判断根磁盘使用率超额
+  #系统盘使用率
+function sys_disk()
+{
+#if [ $Disk_rate_sys2 -gt 80 ]
+ if true
+ then
+  echo "$Date_time 磁盘使用率超额" >> $Logs_file/disk_rate.$Date.log
+  /usr/bin/curl --data-ascii '{ "touser": "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'磁盘使用：目录/为${Disk_rate_sys}'"},"safe":"0"}' $PURL
+ else
+  echo "$Date_time 磁盘使用率良好：$Disk_rate_sys" >> $Logs_file/disk_rate.$Date.log
+ fi
+
+  #数据盘使用率
+#if [ $Disk_rate_data2 -gt 80 ]
+ if true
+ then
+  echo "$Date_time 磁盘使用率超额" >> $Logs_file/disk_rate.$Date.log
+  /usr/bin/curl --data-ascii '{ "touser": "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'磁盘使用：目录/data为${Disk_rate_data}'"},"safe":"0"}' $PURL
+ else
+  echo "$Date_time 磁盘使用率良好：$Disk_rate_data" >> $Logs_file/disk_rate.$Date.log
+ fi
+}
+
+# 2.2 判断MEM使用
+function sys_mem()
+{
+ #if [ $Mem_Free_kb -lt 102400 ]
+ if true
+ then
+  echo "$Date_time MEM空闲少于100M" >> $Logs_file/MEM_free.$Date.log
+  /usr/bin/curl --data-ascii '{ "touser":  "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'内存总共：${Mem_Total}MB'\n'内存剩余：${Mem_Free}MB'"},"safe":"0"}' $PURL
+ else
+  echo "$Date_time MEM空闲良好：$Mem_Free" >> $Logs_file/MEM_free.$Date.log
+ fi
+}
+
+# 2.3 判断CPU空闲值过低
+function sys_cpu()
+{
+ #if [ $CPU_free -lt 10 ]
+ if true
+ then
+  echo "$Date_time CPU空闲率少于10%" >> $Logs_file/CPU_free.$Date.log
+  /usr/bin/curl --data-ascii '{ "touser":  "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'CPU空闲：${CPU_free}%'"},"safe":"0"}' $PURL
+ else
+  echo "$Date_time CPU空闲率良好：$CPU_free%" >> $Logs_file/CPU_free.$Date.log
+ fi
+}
+
+# 2.4 判断服务器15分钟负载过高
+function sys_load()
+{
+ #if [ `expr $Load_ave15_1 \> 0` -gt 1 ]
+ if :
+ then
+  echo "$Date_time 服务器15分钟负载过高：$Load_ave15%" >> $Logs_file/Load_ave15.$Date.log
+  /usr/bin/curl --data-ascii '{ "touser":  "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'主机负载：${Load_ave15}%'"},"safe":"0"}' $PURL
+ else
+  echo "$Date_time 服务器15分钟负载良好：$Load_ave15%" >> $Logs_file/Load_ave15.$Date.log
+ fi
+}
+
+# 03.检查服务
+# 3.1 检查docker服务存活
+function docker_status()
+{
+ps -ef|grep docker |grep -v grep
+if [ $? -eq 0 ]
+then
+        Date_time311=`date "+%Y-%m-%d__%H:%M:%S"`
+        echo "$Date_time311:docker is up" >> $Logs_file/Docker_pro.$Date.log 
+else
+                Date_time312=`date "+%Y-%m-%d__%H:%M:%S"`
+                echo "$Date_time312:Docker服务第一次停止" >> $Logs_file/docker.$Date.log
+                /usr/bin/curl --data-ascii '{ "touser": "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time312}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'发生事件：Docker第一次停止'"},"safe":"0"}' $PURL
+        service docker start
+        Os_code=$?
+        if [ $Os_code -eq 0 ]
+        then
+                Date_time313=`date "+%Y-%m-%d__%H:%M:%S"`
+                echo "$Date_time313:Docker_rec is up" >> $Logs_file/docker.$Date.log 
+                /usr/bin/curl --data-ascii '{ "touser":  "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time313}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'发生事件：Docker服务恢复'"},"safe":"0"}' $PURL
+        elif [ $Os_code -ne 0 ]
+        then
+                Date_time314=`date "+%Y-%m-%d__%H:%M:%S"`
+                echo "$Date_time314:Docker重启失败" >> $Logs_file/docker.$Date.log
+                /usr/bin/curl --data-ascii '{ "touser":  "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time314}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'发生事件：Docker服务停止'"},"safe":"0"}' $PURL
+        fi
+fi
+}
+
+# 3.2 检查docker容器存活
+ # docker Container_ID 自下向上
+function docker_container()
+{
+#Container_ID_ALL=("2ac5dfa2cd4e" "36c6485bf415" "a2a46bfde7bb" "3ad69c74ef9c")
+#Container_ID_ALL="`docker ps -aq`"
+Container_ID_ALL="`docker ps -q`"
+for Container_ID in ${Container_ID_ALL[@]}
+do
+    Container_Name=`docker inspect -f='{{.Name}}' $(docker ps -a -q|grep $Container_ID)|awk -F"/" '{print $2}'`
+    docker ps |grep $Container_ID
+    if [ $? -eq 0 ]
+    then
+        Date_time321=`date "+%Y-%m-%d__%H:%M:%S"`
+        echo "$Date_time321:$Container_Name is up" >> $Logs_file/Docker_Container.$Date.log 
+    else
+        docker start $Container_ID
+        Os_code=$?
+        if [ $Os_code -eq 0 ]
+        then
+                Date_time322=`date "+%Y-%m-%d__%H:%M:%S"`
+                echo "$Date_time322:$Container_Name is up" >> $Logs_file/Docker_Container.$Date.log 
+                /usr/bin/curl --data-ascii '{ "touser":  "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time322}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'发生事件：${Container_Name}服务恢复'"},"safe":"0"}' $PURL
+        elif [ $Os_code -ne 0 ]
+        then
+                Date_time323=`date "+%Y-%m-%d__%H:%M:%S"`
+                echo "$Date_time323:$Container_Name重启失败" >> $Logs_file/Docker_Container.$Date.log
+                /usr/bin/curl --data-ascii '{ "touser":  "'${To_User}'", "toparty": "'${To_Party}'","msgtype": "text","agentid": "'${Agent_ID}'","text": {"content": "'获取时间：${Date_time323}'\n'运行业务：${Project_mode}'\n'远程地址：${SSH_addr}'\n'内网地址：${IP_addr}'\n'主机名称：${Host_name}'\n'发生事件：${Container_Name}服务停止'"},"safe":"0"}' $PURL
+        fi
+    fi
+done
+}
+
+# 10 调用函数
+sys_info
+sys_disk
+sys_cpu
+sys_mem
+sys_load
+docker_status
+docker_container

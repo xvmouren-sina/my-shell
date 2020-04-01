@@ -1,0 +1,28 @@
+#!/bin/bash
+echo ssh hello
+CropID='ww3379419e0273be32'
+Secret='MA4JbQ7L48Fgvry4_VLetcVBe8e7LvyzfNRPxXZfGWM'
+GURL="https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=$CropID&corpsecret=$Secret"
+Gtoken=$(/usr/bin/curl -s -G $GURL | awk -F\" '{print $10}')
+PURL="https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=$Gtoken"
+function body() {
+        local int appId=1000002
+        #local userId=$1
+        local userId="XuJiaHao"
+        local partyId=1
+        local msg='有用户上线请注意:\n主机名：'`hostname`'\n主机ip：'`curl ifconfig.me`'\n登录
+用户：'`whoami`'\n登录时间：'`date`
+        printf '{\n'
+        printf '\t"touser":"'"$userId"\"",\n"
+        printf '\t"toparty":"'"$partyId"\"",\n"
+        printf '\t"msgtype": "text",'"\n"
+        printf '\t"agentid":"'"$appId"\"",\n"
+        printf '\t"text":{\n'
+        printf '\t\t"content":"'"$msg"\"
+        printf '\n\t},\n'
+        printf '\t"safe":"0"\n'
+        printf '}\n'
+}
+
+#/usr/bin/curl --data-ascii "$(body)" $PURL 
+/usr/bin/curl -d "$(body)" $PURL 
